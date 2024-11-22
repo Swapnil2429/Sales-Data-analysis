@@ -1,0 +1,88 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import psycopg2
+
+# PostgreSQL connection parameters
+db_config = {
+    'host': 'localhost',
+    'dbname': 'sales_db',
+    'user': 'postgres',
+    'password': 'Swapnil@123',
+    'port': 5435
+}
+
+# Query to fetch data
+query = "SELECT * FROM sales_data"
+
+# Connect to PostgreSQL and fetch data into a DataFrame
+def fetch_data_from_postgres(query):
+    try:
+        # Connect to PostgreSQL
+        conn = psycopg2.connect(**db_config)
+
+        # Load data into pandas DataFrame
+        df = pd.read_sql_query(query, conn)
+        
+        return df
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+# Fetch the sales data
+df = fetch_data_from_postgres(query)
+
+# Convert 'purchase_date' to datetime format
+df['purchase_date'] = pd.to_datetime(df['purchase_date'])
+
+# **1. Top 25 Products by Revenue (Bar Chart)**
+
+# Group data by product and sum the revenue
+product_revenue = df.groupby('product')['revenue'].sum()
+
+# Sort the products by total revenue in descending order and select top 25
+top_25_products = product_revenue.sort_values(ascending=False).head(25)
+
+# Plot Top 25 Products
+plt.figure(figsize=(10, 6))
+top_25_products.plot(kind='bar', color='skyblue')
+plt.title('Top 25 Products by Revenue')
+plt.xlabel('Product')
+plt.ylabel('Total Revenue')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# **2. Monthly Sales Trend (Line Chart)**
+
+# Group data by month and sum the revenue
+monthly_sales = df.groupby(df['purchase_date'].dt.to_period('M'))['revenue'].sum()
+
+# Plot Monthly Sales Trend
+plt.figure(figsize=(10, 6))
+monthly_sales.plot(kind='line', marker='o', color='b')
+plt.title('Monthly Sales Trend')
+plt.xlabel('Month')
+plt.ylabel('Total Revenue')
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# **3. Yearly Sales Trend (Line Chart)**
+
+# Group data by year and sum the revenue
+yearly_sales = df.groupby(df['purchase_date'].dt.to_period('Y'))['revenue'].sum()
+
+# Plot Yearly Sales Trend
+plt.figure(figsize=(10, 6))
+yearly_sales.plot(kind='line', marker='o', color='green')
+plt.title('Yearly Sales Trend')
+plt.xlabel('Year')
+plt.ylabel('Total Revenue')
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
